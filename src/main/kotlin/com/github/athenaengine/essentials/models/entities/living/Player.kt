@@ -1,5 +1,6 @@
 package com.github.athenaengine.essentials.models.entities.living
 
+import com.github.athenaengine.essentials.`interface`.IParticipant
 import com.github.athenaengine.essentials.enums.InventoryItemType
 import com.github.athenaengine.essentials.enums.ScoreType
 import com.github.athenaengine.essentials.models.entities.Item
@@ -7,6 +8,7 @@ import com.github.athenaengine.essentials.models.entities.Team
 import com.github.athenaengine.essentials.models.entities.World
 import com.github.athenaengine.essentials.models.holders.EItemHolder
 import com.github.athenaengine.essentials.models.holders.LocationHolder
+import com.github.athenaengine.essentials.models.packets.GamePacket
 import com.github.athenaengine.essentials.providers.L2ObjectProvider
 import com.l2jserver.gameserver.instancemanager.InstanceManager
 import com.l2jserver.gameserver.model.L2Party
@@ -19,7 +21,7 @@ import com.l2jserver.gameserver.taskmanager.DecayTaskManager
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-class Player(objectId: Int) : Playable(objectId) {
+class Player(objectId: Int) : Playable(objectId), IParticipant {
 
     var protectionTimeEnd: Long = 0
 
@@ -111,13 +113,6 @@ class Player(objectId: Int) : Playable(objectId) {
         pc.useEquippableItem(pc.inventory.getPaperdollItem(type.value)!!, true)
     }
 
-    fun giveItems(items: Collection<EItemHolder>) {
-        items.forEach { reward -> getPc().addItem(
-                "eventReward", reward.id, reward.amount,
-                null, true
-        ) }
-    }
-
     fun giveBuffs(buffs: Collection<SkillHolder>) {
         buffs.forEach { buff -> buff.skill.applyEffects(getPc(), getPc()) }
     }
@@ -183,14 +178,23 @@ class Player(objectId: Int) : Playable(objectId) {
         getPc().breakCast()
     }
 
-    fun getPoints(type: ScoreType) = eventPlayerStatus!!.points[type]
+    fun sendMessage(message: String) = getPc().sendMessage(message)
 
-    fun increasePoints(type: ScoreType, amount: Int) {
+    override fun getPoints(type: ScoreType) = eventPlayerStatus!!.points[type] ?: 0
+
+    override fun increasePoints(type: ScoreType, amount: Int) {
         val points = eventPlayerStatus!!.points[type] ?: 0
         eventPlayerStatus!!.points.put(type, points + amount)
     }
 
-    fun sendMessage(message: String) = getPc().sendMessage(message)
+    override fun sendPacket(packet: GamePacket) = packet.send(this)
+
+    override fun giveItems(items: Collection<EItemHolder>) {
+        items.forEach { reward -> getPc().addItem(
+                "eventReward", reward.id, reward.amount,
+                null, true
+        ) }
+    }
 
     private fun setTeam(team: Team) {
         val location = LocationHolder(getPc().location.x, getPc().location.y,

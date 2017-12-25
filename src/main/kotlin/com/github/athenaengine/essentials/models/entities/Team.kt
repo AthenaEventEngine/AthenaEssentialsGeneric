@@ -1,5 +1,6 @@
 package com.github.athenaengine.essentials.models.entities
 
+import com.github.athenaengine.essentials.`interface`.IParticipant
 import com.github.athenaengine.essentials.enums.ScoreType
 import com.github.athenaengine.essentials.enums.TeamType
 import com.github.athenaengine.essentials.models.entities.living.Player
@@ -10,7 +11,7 @@ import com.l2jserver.util.Rnd
 import java.util.ArrayList
 import java.util.concurrent.ConcurrentHashMap
 
-class Team(val name: String, val type: TeamType, var spawns: ArrayList<LocationHolder>) {
+class Team(val name: String, val type: TeamType, var spawns: ArrayList<LocationHolder>) : IParticipant {
 
     val players = ArrayList<Player>()
     val points = ConcurrentHashMap<ScoreType, Int>()
@@ -24,15 +25,15 @@ class Team(val name: String, val type: TeamType, var spawns: ArrayList<LocationH
         spawns.forEach{ spawn -> spawn.instanceId = id }
     }
 
-    fun getPoints(type: ScoreType): Int = points[type] ?: 0
+    override fun getPoints(type: ScoreType): Int = points[type] ?: 0
 
-    fun increasePoints(type: ScoreType, points: Int) {
+    override fun increasePoints(type: ScoreType, points: Int) {
         if (!this.points.containsKey(type)) this.points.put(type, 0)
         this.points.put(type, getPoints(type) + points)
     }
 
-    fun giveItems(items: Collection<EItemHolder>) = players.forEach{ player -> player.giveItems(items) }
+    override fun giveItems(items: Collection<EItemHolder>) = players.forEach{ player -> player.giveItems(items) }
 
-    fun sendPacket(packet: GamePacket) = players.forEach{ player -> packet.send(player) }
+    override fun sendPacket(packet: GamePacket) = players.forEach{ player -> packet.send(player) }
 
 }
