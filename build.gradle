@@ -1,0 +1,68 @@
+group 'com.github.athenaengine.essentials'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    ext.kotlin_version = '1.1.3'
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: 'kotlin'
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+configurations {
+    provided
+    compile.extendsFrom provided
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    provided name: 'l2jserver'
+    provided name: 'mmocore'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+jar {
+    from {
+        (configurations.compile - configurations.provided).collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    manifest {
+        attributes 'Implementation-Version': version,
+                'Built-By': System.getProperty('user.name'),
+                'Built-Date': new Date(),
+                'Built-JDK': System.getProperty('java.version'),
+                'Main-Class': 'com.github.athenaengine.essentials.Essentials'
+    }
+    archiveName = 'AthenaEngineEssentials_' + version + '.jar'
+}
+
+task zip(type: Zip) {
+    def fileName = 'AthenaEngineEssentials_' + new Date().format("yyyy-MM-dd")
+    baseName = fileName
+    from('dist')
+    into('libs') {
+        from(jar)
+    }
+    println 'Build in build/distributions/' + fileName + '.zip'
+}
+
+build.finalizedBy(zip)
